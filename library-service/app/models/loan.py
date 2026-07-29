@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, func
+from sqlalchemy import DateTime, ForeignKey, Integer, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -33,6 +33,12 @@ class Loan(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+    due_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("(now() + interval '7 days')"),
+        index=True,
     )
     returned_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),

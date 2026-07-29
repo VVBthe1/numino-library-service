@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package neighborhood.library.v1;
+
+import "entities.proto";
+
+message LoanWithBookAndMember {
+  Loan loan = 1;
+  BookMinimal book = 2;
+  MemberMinimal member = 3;
+}
+
+message BorrowBookRequest {
+  int32 book_id = 1;
+  int32 member_id = 2;
+}
+
+message BorrowBookResponse {
+  Loan loan = 1;
+}
+
+message ReturnBookRequest {
+  int32 loan_id = 1;
+}
+
+message ReturnBookResponse {
+  Loan loan = 1;
+}
+
+message GetLoanRequest {
+  int32 id = 1;
+}
+
+message GetLoanResponse {
+  Loan loan = 1;
+  BookMinimal book = 2;
+  MemberMinimal member = 3;
+}
+
+message ListLoansRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  optional int32 book_id = 3;
+  optional int32 member_id = 4;
+  optional bool active_only = 5;
+}
+
+message ListLoansResponse {
+  repeated LoanWithBookAndMember loans = 1;
+  string next_page_token = 2;
+}
+
+// Manages borrowing and returning books.
+service LoanService {
+  // Borrow a book (creates a loan).
+  rpc BorrowBook(BorrowBookRequest) returns (BorrowBookResponse);
+  // Return a borrowed book.
+  rpc ReturnBook(ReturnBookRequest) returns (ReturnBookResponse);
+  // Get a loan by id.
+  rpc GetLoan(GetLoanRequest) returns (GetLoanResponse);
+  // List loans with optional filters.
+  rpc ListLoans(ListLoansRequest) returns (ListLoansResponse);
+}

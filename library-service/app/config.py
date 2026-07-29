@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = False
     database_url: str = "postgresql://postgres:postgres@localhost:5432/neighborhood_library"
+    grpc_host: str = "0.0.0.0"
+    grpc_port: int = 50051
 
 
 @lru_cache

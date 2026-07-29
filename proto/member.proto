@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package neighborhood.library.v1;
+
+import "entities.proto";
+import "google/protobuf/empty.proto";
+
+message CreateMemberRequest {
+  string name = 1;
+  string email = 2;
+  optional string phone = 3;
+  optional string address = 4;
+  string membership_start_date = 5;
+  optional string membership_end_date = 6;
+}
+
+message CreateMemberResponse {
+  Member member = 1;
+}
+
+message GetMemberRequest {
+  int32 id = 1;
+}
+
+message GetMemberResponse {
+  Member member = 1;
+}
+
+message ListMembersRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  optional string name_query = 3;
+  optional string email_query = 4;
+}
+
+message ListMembersResponse {
+  repeated Member members = 1;
+  string next_page_token = 2;
+}
+
+message UpdateMemberRequest {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  optional string phone = 4;
+  optional string address = 5;
+  string membership_start_date = 6;
+  optional string membership_end_date = 7;
+}
+
+message UpdateMemberResponse {
+  Member member = 1;
+}
+
+message DeleteMemberRequest {
+  int32 id = 1;
+}
+
+// Manages library members.
+service MemberService {
+  // Register a member.
+  rpc CreateMember(CreateMemberRequest) returns (CreateMemberResponse);
+  // Get a member by id.
+  rpc GetMember(GetMemberRequest) returns (GetMemberResponse);
+  // List members with optional filters.
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+  // Update a member.
+  rpc UpdateMember(UpdateMemberRequest) returns (UpdateMemberResponse);
+  // Delete a member.
+  rpc DeleteMember(DeleteMemberRequest) returns (google.protobuf.Empty);
+}

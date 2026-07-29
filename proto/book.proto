@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package neighborhood.library.v1;
+
+import "entities.proto";
+import "google/protobuf/empty.proto";
+
+message CreateBookRequest {
+  string title = 1;
+  string author = 2;
+  string isbn = 3;
+  optional int32 publication_year = 4;
+  optional string publisher = 5;
+  Genre genre = 6;
+  optional string description = 7;
+  int32 total_quantity = 8;
+}
+
+message CreateBookResponse {
+  Book book = 1;
+}
+
+message GetBookRequest {
+  int32 id = 1;
+}
+
+message GetBookResponse {
+  Book book = 1;
+}
+
+message ListBooksRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  optional string title_query = 3;
+  optional string author_query = 4;
+  optional Genre genre = 5;
+  optional string publisher = 6;
+  optional bool available_only = 7;
+}
+
+message ListBooksResponse {
+  repeated Book books = 1;
+  string next_page_token = 2;
+}
+
+message UpdateBookRequest {
+  int32 id = 1;
+  string title = 2;
+  string author = 3;
+  string isbn = 4;
+  optional int32 publication_year = 5;
+  optional string publisher = 6;
+  Genre genre = 7;
+  optional string description = 8;
+  int32 total_quantity = 9;
+}
+
+message UpdateBookResponse {
+  Book book = 1;
+}
+
+message DeleteBookRequest {
+  int32 id = 1;
+}
+
+message OverdueBook {
+  BookMinimal book = 1;
+  Loan loan = 2;
+  MemberMinimal member = 3;
+}
+
+message OverdueBooksRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  optional string publisher = 3;
+  optional Genre genre = 4;
+}
+
+message OverdueBooksResponse {
+  repeated OverdueBook books = 1;
+  string next_page_token = 2;
+}
+
+message OutOfStockBooksRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  optional string publisher = 3;
+  optional Genre genre = 4;
+}
+
+message OutOfStockBooksResponse {
+  repeated Book books = 1;
+  string next_page_token = 2;
+}
+
+// Manages the book catalog.
+service BookService {
+  // Add a book.
+  rpc CreateBook(CreateBookRequest) returns (CreateBookResponse);
+  // Get a book by id.
+  rpc GetBook(GetBookRequest) returns (GetBookResponse);
+  // List books with optional filters.
+  rpc ListBooks(ListBooksRequest) returns (ListBooksResponse);
+  // Update a book.
+  rpc UpdateBook(UpdateBookRequest) returns (UpdateBookResponse);
+  // Delete a book.
+  rpc DeleteBook(DeleteBookRequest) returns (google.protobuf.Empty);
+  // List books with overdue loans.
+  rpc GetOverdueBooks(OverdueBooksRequest) returns (OverdueBooksResponse);
+  // List books with no copies available.
+  rpc GetOutOfStockBooks(OutOfStockBooksRequest) returns (OutOfStockBooksResponse);
+}

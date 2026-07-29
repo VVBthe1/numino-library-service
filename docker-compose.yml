@@ -22,8 +22,11 @@ services:
       APP_ENV: development
       DEBUG: "true"
       DATABASE_URL: postgresql://postgres:postgres@db:5432/neighborhood_library
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: "50051"
     ports:
       - "8000:8000"
+      - "50051:50051"
     depends_on:
       db:
         condition: service_healthy
