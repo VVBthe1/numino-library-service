@@ -42,7 +42,8 @@ class BookRepository:
 
     def add(self, book: Book) -> Book:
         self._db.add(book)
-        self._db.commit()
+        self._db.flush()
+        self._db.refresh(book)
         return book
 
     def delete(self, book: Book) -> None:
