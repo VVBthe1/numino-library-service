@@ -13,8 +13,8 @@ class BookRepository:
     def __init__(self, db: Session) -> None:
         self._db = db
 
-    def get_by_id(self, book_id: int) -> Book | None:
-        return self._db.query(Book).filter(Book.id == book_id).first()
+    def get_by_id(self, book_id: int) -> Book:
+        return self._db.get_one(Book, book_id)
 
     def get_by_isbn(self, isbn: str) -> Book | None:
         return self._db.query(Book).filter(Book.isbn == isbn).first()
