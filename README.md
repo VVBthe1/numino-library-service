@@ -55,6 +55,8 @@ docker compose up --build
 
 Sign in at http://localhost:8080 with `admin` / `admin`.
 
+On first boot the API runs an idempotent seed (`scripts/seed.py`): a few books/members, one **overdue** loan, and an **out of stock** title so those screens aren’t empty.
+
 Stop with `Ctrl+C`, or `docker compose down`.
 
 ### Frontend only (against running Compose)
@@ -81,6 +83,7 @@ cp .env.example .env
 
 python scripts/generate_protos.py   # after editing proto/
 alembic upgrade head
+python scripts/seed.py          # optional; skipped if already seeded
 python -m app.rpc.server            # :50051
 ```
 
@@ -89,9 +92,9 @@ python -m app.rpc.server            # :50051
 ### UI
 
 1. Open http://localhost:8080 and sign in (`admin` / `admin`).
-2. Create a book and a member.
-3. Borrow / return on **Loans**.
-4. Use filters on each list; check **Overdue** and **Out of stock** under Books.
+2. Seeded data should already show books, members, loans; open **Overdue** and **Out of stock**.
+3. Create more records or borrow / return on **Loans**.
+4. Use filters on each list.
 5. Delete a book/member that only has returned loans — it should leave the catalog but remain on loan history.
 
 ### Backend unit tests

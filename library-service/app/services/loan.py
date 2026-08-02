@@ -96,6 +96,8 @@ class LoanService:
             raise ValueError("book_id must be a positive integer")
         if member_id is not None and member_id <= 0:
             raise ValueError("member_id must be a positive integer")
+        if offset < 0:
+            raise ValueError("offset must be >= 0")
         return self._loans.list(
             book_id=book_id,
             member_id=member_id,

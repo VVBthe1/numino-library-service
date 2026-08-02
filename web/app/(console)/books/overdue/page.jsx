@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getBookClient, getErrorMessage } from "@/api";
 import { useAuth } from "@/auth";
+import { PaginationBar } from "@/components/PaginationBar";
 import { GENRES, formatTime } from "@/labels";
 
 export default function OverduePage() {
@@ -11,37 +12,46 @@ export default function OverduePage() {
   const [error, setError] = useState("");
   const [publisher, setPublisher] = useState("");
   const [genre, setGenre] = useState("");
+  const [pageSize, setPageSize] = useState(20);
+  const [pageToken, setPageToken] = useState("");
+  const [nextToken, setNextToken] = useState("");
+  const [prevTokens, setPrevTokens] = useState([]);
 
-  async function loadData() {
+  async function loadData(opts) {
+    const size = opts && opts.pageSize != null ? opts.pageSize : pageSize;
+    const tokenPage =
+      opts && opts.pageToken != null ? opts.pageToken : pageToken;
     setError("");
     try {
       const req = {
-        pageSize: 100,
-        pageToken: "",
+        pageSize: size,
+        pageToken: tokenPage || "",
       };
-      if (publisher) {
-        req.publisher = publisher;
-      }
-      if (genre) {
-        req.genre = Number(genre);
-      }
+      if (publisher) req.publisher = publisher;
+      if (genre) req.genre = Number(genre);
       const result = await getBookClient(token).getOverdueBooks(req);
       setRows(result.response.books);
+      setNextToken(result.response.nextPageToken || "");
     } catch (err) {
       setError(getErrorMessage(err));
     }
   }
 
+  function resetPageAndLoad(size) {
+    setPageToken("");
+    setPrevTokens([]);
+    setNextToken("");
+    loadData({ pageToken: "", pageSize: size != null ? size : pageSize });
+  }
+
   useEffect(() => {
-    if (token) {
-      loadData();
-    }
+    if (token) resetPageAndLoad();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   function onFilter(e) {
     e.preventDefault();
-    loadData();
+    resetPageAndLoad();
   }
 
   return (
@@ -84,7 +94,7 @@ export default function OverduePage() {
       <div className="panel">
         <div className="table-head">
           <h2>Results</h2>
-          <button type="button" className="btn ghost" onClick={loadData}>
+          <button type="button" className="btn ghost" onClick={() => loadData()}>
             Refresh
           </button>
         </div>
@@ -125,6 +135,27 @@ export default function OverduePage() {
             </tbody>
           </table>
         </div>
+        <PaginationBar
+          pageSize={pageSize}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            resetPageAndLoad(size);
+          }}
+          canPrev={prevTokens.length > 0}
+          canNext={Boolean(nextToken)}
+          onPrev={() => {
+            const stack = prevTokens.slice();
+            const prev = stack.pop() || "";
+            setPrevTokens(stack);
+            setPageToken(prev);
+            loadData({ pageToken: prev });
+          }}
+          onNext={() => {
+            setPrevTokens(prevTokens.concat([pageToken]));
+            setPageToken(nextToken);
+            loadData({ pageToken: nextToken });
+          }}
+        />
       </div>
     </section>
   );

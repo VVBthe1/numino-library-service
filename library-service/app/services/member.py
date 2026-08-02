@@ -92,6 +92,8 @@ class MemberService:
     ) -> list[Member]:
         if limit <= 0:
             raise ValueError("page_size must be a positive integer")
+        if offset < 0:
+            raise ValueError("offset must be >= 0")
         return self._members.list(
             name_query=name_query.strip() if name_query else None,
             email_query=email_query.strip() if email_query else None,

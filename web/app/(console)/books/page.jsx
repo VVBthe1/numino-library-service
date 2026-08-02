@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getBookClient, getErrorMessage } from "@/api";
 import { useAuth } from "@/auth";
+import { PaginationBar } from "@/components/PaginationBar";
 import { GENRES, getGenreLabel } from "@/labels";
 
 export default function BooksPage() {
@@ -30,6 +31,11 @@ export default function BooksPage() {
   const [publisherFilter, setPublisherFilter] = useState("");
   const [availableOnly, setAvailableOnly] = useState(false);
 
+  const [pageSize, setPageSize] = useState(20);
+  const [pageToken, setPageToken] = useState("");
+  const [nextToken, setNextToken] = useState("");
+  const [prevTokens, setPrevTokens] = useState([]);
+
   function clearForm() {
     setEditId(null);
     setTitle("");
@@ -42,7 +48,6 @@ export default function BooksPage() {
     setDescription("");
   }
 
-  // isbn should be 10 or 13 digits (dashes ok)
   function checkIsbn(value) {
     const cleaned = value.replace(/[\s-]/g, "").toUpperCase();
     if (cleaned.length === 10 || cleaned.length === 13) {
@@ -51,12 +56,15 @@ export default function BooksPage() {
     return null;
   }
 
-  async function loadBooks() {
+  async function loadBooks(opts) {
+    const size = opts && opts.pageSize != null ? opts.pageSize : pageSize;
+    const tokenPage =
+      opts && opts.pageToken != null ? opts.pageToken : pageToken;
     setError("");
     try {
       const req = {
-        pageSize: 100,
-        pageToken: "",
+        pageSize: size,
+        pageToken: tokenPage || "",
       };
       if (titleQuery) req.titleQuery = titleQuery;
       if (authorQuery) req.authorQuery = authorQuery;
@@ -66,16 +74,23 @@ export default function BooksPage() {
 
       const result = await getBookClient(token).listBooks(req);
       setBooks(result.response.books);
+      setNextToken(result.response.nextPageToken || "");
     } catch (err) {
       setError(getErrorMessage(err));
     }
   }
 
+  function resetPageAndLoad(size) {
+    setPageToken("");
+    setPrevTokens([]);
+    setNextToken("");
+    loadBooks({ pageToken: "", pageSize: size != null ? size : pageSize });
+  }
+
   useEffect(() => {
     if (token) {
-      loadBooks();
+      resetPageAndLoad();
     }
-    // only on first load / token change — filters use the Apply button
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -150,7 +165,7 @@ export default function BooksPage() {
 
   function applyFilters(e) {
     e.preventDefault();
-    loadBooks();
+    resetPageAndLoad();
   }
 
   async function clearFiltersAndReload() {
@@ -159,13 +174,16 @@ export default function BooksPage() {
     setGenreFilter("");
     setPublisherFilter("");
     setAvailableOnly(false);
+    setPageToken("");
+    setPrevTokens([]);
     setError("");
     try {
       const result = await getBookClient(token).listBooks({
-        pageSize: 100,
+        pageSize: pageSize,
         pageToken: "",
       });
       setBooks(result.response.books);
+      setNextToken(result.response.nextPageToken || "");
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -336,7 +354,11 @@ export default function BooksPage() {
       <div className="panel">
         <div className="table-head">
           <h2>Catalog</h2>
-          <button type="button" className="btn ghost" onClick={loadBooks}>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => loadBooks()}
+          >
             Refresh
           </button>
         </div>
@@ -393,6 +415,27 @@ export default function BooksPage() {
             </tbody>
           </table>
         </div>
+        <PaginationBar
+          pageSize={pageSize}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            resetPageAndLoad(size);
+          }}
+          canPrev={prevTokens.length > 0}
+          canNext={Boolean(nextToken)}
+          onPrev={() => {
+            const stack = prevTokens.slice();
+            const prev = stack.pop() || "";
+            setPrevTokens(stack);
+            setPageToken(prev);
+            loadBooks({ pageToken: prev });
+          }}
+          onNext={() => {
+            setPrevTokens(prevTokens.concat([pageToken]));
+            setPageToken(nextToken);
+            loadBooks({ pageToken: nextToken });
+          }}
+        />
       </div>
     </section>
   );

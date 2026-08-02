@@ -8,6 +8,7 @@ from app.pb import member_pb2, member_pb2_grpc
 from app.repositories.loan import LoanRepository
 from app.repositories.member import MemberRepository
 from app.rpc.mappers.book import member_to_proto
+from app.rpc.pagination import next_page_token, resolve_page
 from app.services.member import MemberService
 
 
@@ -55,17 +56,21 @@ class MemberServicer(member_pb2_grpc.MemberServiceServicer):
         try:
             with session_scope() as db:
                 service = _member_service(db)
-                members = service.list(
+                size, offset = resolve_page(request.page_size, request.page_token)
+                rows = service.list(
                     name_query=request.name_query
                     if request.HasField("name_query")
                     else None,
                     email_query=request.email_query
                     if request.HasField("email_query")
                     else None,
-                    limit=request.page_size or 50,
+                    limit=size + 1,
+                    offset=offset,
                 )
+                members, token = next_page_token(offset, size, rows)
                 return member_pb2.ListMembersResponse(
                     members=[member_to_proto(member) for member in members],
+                    next_page_token=token,
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)

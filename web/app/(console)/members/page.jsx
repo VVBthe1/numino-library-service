@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { getErrorMessage, getMemberClient } from "@/api";
 import { useAuth } from "@/auth";
+import { PaginationBar } from "@/components/PaginationBar";
 
 function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// default membership is 1 year
 function oneYearLater(startDate) {
   const d = new Date(startDate + "T00:00:00");
   d.setFullYear(d.getFullYear() + 1);
@@ -33,6 +33,11 @@ export default function MembersPage() {
   const [nameQuery, setNameQuery] = useState("");
   const [emailQuery, setEmailQuery] = useState("");
 
+  const [pageSize, setPageSize] = useState(20);
+  const [pageToken, setPageToken] = useState("");
+  const [nextToken, setNextToken] = useState("");
+  const [prevTokens, setPrevTokens] = useState([]);
+
   function clearForm() {
     setEditId(null);
     setName("");
@@ -44,30 +49,40 @@ export default function MembersPage() {
     setEndDate(oneYearLater(start));
   }
 
-  async function loadMembers(filters) {
+  async function loadMembers(opts) {
+    const size = opts && opts.pageSize != null ? opts.pageSize : pageSize;
+    const tokenPage =
+      opts && opts.pageToken != null ? opts.pageToken : pageToken;
+    const nq = opts && opts.nameQuery != null ? opts.nameQuery : nameQuery;
+    const eq = opts && opts.emailQuery != null ? opts.emailQuery : emailQuery;
     setError("");
     try {
       const req = {
-        pageSize: 100,
-        pageToken: "",
+        pageSize: size,
+        pageToken: tokenPage || "",
       };
-      if (filters && filters.nameQuery) {
-        req.nameQuery = filters.nameQuery;
-      }
-      if (filters && filters.emailQuery) {
-        req.emailQuery = filters.emailQuery;
-      }
+      if (nq) req.nameQuery = nq;
+      if (eq) req.emailQuery = eq;
       const result = await getMemberClient(token).listMembers(req);
       setMembers(result.response.members);
+      setNextToken(result.response.nextPageToken || "");
     } catch (err) {
       setError(getErrorMessage(err));
     }
   }
 
+  function resetPageAndLoad(size) {
+    setPageToken("");
+    setPrevTokens([]);
+    setNextToken("");
+    loadMembers({ pageToken: "", pageSize: size != null ? size : pageSize });
+  }
+
   useEffect(() => {
     if (token) {
-      loadMembers({ nameQuery: "", emailQuery: "" });
+      resetPageAndLoad();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   function onStartChange(value) {
@@ -109,7 +124,7 @@ export default function MembersPage() {
         await getMemberClient(token).createMember(data);
       }
       clearForm();
-      await loadMembers({ nameQuery: nameQuery, emailQuery: emailQuery });
+      await loadMembers();
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -125,7 +140,7 @@ export default function MembersPage() {
       if (editId === id) {
         clearForm();
       }
-      await loadMembers({ nameQuery: nameQuery, emailQuery: emailQuery });
+      await loadMembers();
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -133,7 +148,7 @@ export default function MembersPage() {
 
   function applyFilters(e) {
     e.preventDefault();
-    loadMembers({ nameQuery: nameQuery, emailQuery: emailQuery });
+    resetPageAndLoad();
   }
 
   return (
@@ -240,7 +255,13 @@ export default function MembersPage() {
             onClick={() => {
               setNameQuery("");
               setEmailQuery("");
-              loadMembers({});
+              setPageToken("");
+              setPrevTokens([]);
+              loadMembers({
+                nameQuery: "",
+                emailQuery: "",
+                pageToken: "",
+              });
             }}
           >
             Clear
@@ -254,9 +275,7 @@ export default function MembersPage() {
           <button
             type="button"
             className="btn ghost"
-            onClick={() =>
-              loadMembers({ nameQuery: nameQuery, emailQuery: emailQuery })
-            }
+            onClick={() => loadMembers()}
           >
             Refresh
           </button>
@@ -310,6 +329,27 @@ export default function MembersPage() {
             </tbody>
           </table>
         </div>
+        <PaginationBar
+          pageSize={pageSize}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            resetPageAndLoad(size);
+          }}
+          canPrev={prevTokens.length > 0}
+          canNext={Boolean(nextToken)}
+          onPrev={() => {
+            const stack = prevTokens.slice();
+            const prev = stack.pop() || "";
+            setPrevTokens(stack);
+            setPageToken(prev);
+            loadMembers({ pageToken: prev });
+          }}
+          onNext={() => {
+            setPrevTokens(prevTokens.concat([pageToken]));
+            setPageToken(nextToken);
+            loadMembers({ pageToken: nextToken });
+          }}
+        />
       </div>
     </section>
   );

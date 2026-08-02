@@ -8,6 +8,7 @@ import {
   getMemberClient,
 } from "@/api";
 import { useAuth } from "@/auth";
+import { PaginationBar } from "@/components/PaginationBar";
 import { formatTime } from "@/labels";
 
 function formatLocalDate(d) {
@@ -40,27 +41,37 @@ export default function LoansPage() {
   const [filterMemberId, setFilterMemberId] = useState("");
   const [activeOnly, setActiveOnly] = useState(true);
 
-  async function loadLoans() {
+  const [pageSize, setPageSize] = useState(20);
+  const [pageToken, setPageToken] = useState("");
+  const [nextToken, setNextToken] = useState("");
+  const [prevTokens, setPrevTokens] = useState([]);
+
+  async function loadLoans(opts) {
+    const size = opts && opts.pageSize != null ? opts.pageSize : pageSize;
+    const tokenPage =
+      opts && opts.pageToken != null ? opts.pageToken : pageToken;
     setError("");
     try {
       const req = {
-        pageSize: 100,
-        pageToken: "",
+        pageSize: size,
+        pageToken: tokenPage || "",
       };
-      if (filterBookId) {
-        req.bookId = Number(filterBookId);
-      }
-      if (filterMemberId) {
-        req.memberId = Number(filterMemberId);
-      }
-      if (activeOnly) {
-        req.activeOnly = true;
-      }
+      if (filterBookId) req.bookId = Number(filterBookId);
+      if (filterMemberId) req.memberId = Number(filterMemberId);
+      if (activeOnly) req.activeOnly = true;
       const result = await getLoanClient(token).listLoans(req);
       setLoans(result.response.loans);
+      setNextToken(result.response.nextPageToken || "");
     } catch (err) {
       setError(getErrorMessage(err));
     }
+  }
+
+  function resetPageAndLoad(size) {
+    setPageToken("");
+    setPrevTokens([]);
+    setNextToken("");
+    loadLoans({ pageToken: "", pageSize: size != null ? size : pageSize });
   }
 
   async function loadDropdowns() {
@@ -76,7 +87,6 @@ export default function LoansPage() {
       setBooks(bookRes.response.books);
       setMembers(memberRes.response.members);
 
-      // pick first options if empty
       if (!bookId && bookRes.response.books.length > 0) {
         setBookId(String(bookRes.response.books[0].id));
       }
@@ -91,7 +101,7 @@ export default function LoansPage() {
   useEffect(() => {
     if (token) {
       loadDropdowns();
-      loadLoans();
+      resetPageAndLoad();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
@@ -127,7 +137,7 @@ export default function LoansPage() {
 
   function applyFilters(e) {
     e.preventDefault();
-    loadLoans();
+    resetPageAndLoad();
   }
 
   return (
@@ -236,7 +246,11 @@ export default function LoansPage() {
       <div className="panel">
         <div className="table-head">
           <h2>Loan list</h2>
-          <button type="button" className="btn ghost" onClick={loadLoans}>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => loadLoans()}
+          >
             Refresh
           </button>
         </div>
@@ -292,6 +306,27 @@ export default function LoansPage() {
             </tbody>
           </table>
         </div>
+        <PaginationBar
+          pageSize={pageSize}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            resetPageAndLoad(size);
+          }}
+          canPrev={prevTokens.length > 0}
+          canNext={Boolean(nextToken)}
+          onPrev={() => {
+            const stack = prevTokens.slice();
+            const prev = stack.pop() || "";
+            setPrevTokens(stack);
+            setPageToken(prev);
+            loadLoans({ pageToken: prev });
+          }}
+          onNext={() => {
+            setPrevTokens(prevTokens.concat([pageToken]));
+            setPageToken(nextToken);
+            loadLoans({ pageToken: nextToken });
+          }}
+        />
       </div>
     </section>
   );

@@ -14,6 +14,7 @@ from app.rpc.mappers.book import (
     loan_to_proto,
     member_minimal_to_proto,
 )
+from app.rpc.pagination import next_page_token, resolve_page
 from app.services.book import BookService
 
 
@@ -73,6 +74,7 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
         try:
             with session_scope() as db:
                 service = _book_service(db)
+                size, offset = resolve_page(request.page_size, request.page_token)
                 genre = (
                     genre_from_proto(request.genre)
                     if request.HasField("genre")
@@ -83,7 +85,7 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                     if request.HasField("available_only")
                     else None
                 )
-                books = service.list(
+                rows = service.list(
                     title_query=request.title_query
                     if request.HasField("title_query")
                     else None,
@@ -95,8 +97,10 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                     if request.HasField("publisher")
                     else None,
                     available_only=available_only,
-                    limit=request.page_size or 50,
+                    limit=size + 1,
+                    offset=offset,
                 )
+                books, token = next_page_token(offset, size, rows)
                 return book_pb2.ListBooksResponse(
                     books=[
                         book_to_proto(
@@ -104,6 +108,7 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                         )
                         for book in books
                     ],
+                    next_page_token=token,
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
@@ -166,18 +171,21 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
         try:
             with session_scope() as db:
                 service = _book_service(db)
+                size, offset = resolve_page(request.page_size, request.page_token)
                 genre = (
                     genre_from_proto(request.genre)
                     if request.HasField("genre")
                     else None
                 )
-                loans = service.list_overdue(
+                rows = service.list_overdue(
                     publisher=request.publisher
                     if request.HasField("publisher")
                     else None,
                     genre=genre,
-                    limit=request.page_size or 50,
+                    limit=size + 1,
+                    offset=offset,
                 )
+                loans, token = next_page_token(offset, size, rows)
                 return book_pb2.OverdueBooksResponse(
                     books=[
                         book_pb2.OverdueBook(
@@ -187,6 +195,7 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                         )
                         for loan in loans
                     ],
+                    next_page_token=token,
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
@@ -197,22 +206,26 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
         try:
             with session_scope() as db:
                 service = _book_service(db)
+                size, offset = resolve_page(request.page_size, request.page_token)
                 genre = (
                     genre_from_proto(request.genre)
                     if request.HasField("genre")
                     else None
                 )
-                books = service.list_out_of_stock(
+                rows = service.list_out_of_stock(
                     publisher=request.publisher
                     if request.HasField("publisher")
                     else None,
                     genre=genre,
-                    limit=request.page_size or 50,
+                    limit=size + 1,
+                    offset=offset,
                 )
+                books, token = next_page_token(offset, size, rows)
                 return book_pb2.OutOfStockBooksResponse(
                     books=[
                         book_to_proto(book, available_quantity=0) for book in books
                     ],
+                    next_page_token=token,
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)

@@ -221,7 +221,7 @@ textarea {
 
 .btn:disabled {
   opacity: 0.65;
-  cursor: wait;
+  cursor: not-allowed;
 }
 
 .btn.primary {
@@ -258,6 +258,39 @@ textarea {
 .table-head h2 {
   margin: 0;
   flex: 1;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.pager-size {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0;
+}
+
+.pager-size select {
+  width: auto;
+  min-width: 4.5rem;
+}
+
+.pager-btns {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.pager-btns .btn,
+.pager-btns .btn:disabled {
+  cursor: pointer;
 }
 
 .table-wrap {

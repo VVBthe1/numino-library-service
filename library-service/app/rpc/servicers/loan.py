@@ -11,6 +11,7 @@ from app.rpc.mappers.book import (
     loan_to_proto,
     member_minimal_to_proto,
 )
+from app.rpc.pagination import next_page_token, resolve_page
 from app.services.loan import LoanService
 
 
@@ -80,7 +81,8 @@ class LoanServicer(loan_pb2_grpc.LoanServiceServicer):
         try:
             with session_scope() as db:
                 service = _loan_service(db)
-                loans = service.list(
+                size, offset = resolve_page(request.page_size, request.page_token)
+                rows = service.list(
                     book_id=request.book_id if request.HasField("book_id") else None,
                     member_id=request.member_id
                     if request.HasField("member_id")
@@ -88,8 +90,10 @@ class LoanServicer(loan_pb2_grpc.LoanServiceServicer):
                     active_only=request.active_only
                     if request.HasField("active_only")
                     else None,
-                    limit=request.page_size or 50,
+                    limit=size + 1,
+                    offset=offset,
                 )
+                loans, token = next_page_token(offset, size, rows)
                 return loan_pb2.ListLoansResponse(
                     loans=[
                         loan_pb2.LoanWithBookAndMember(
@@ -99,6 +103,7 @@ class LoanServicer(loan_pb2_grpc.LoanServiceServicer):
                         )
                         for loan in loans
                     ],
+                    next_page_token=token,
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
