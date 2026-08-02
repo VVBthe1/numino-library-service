@@ -152,6 +152,7 @@ export default function MembersPage() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            maxLength={255}
             required
           />
         </label>
@@ -161,12 +162,17 @@ export default function MembersPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            maxLength={255}
             required
           />
         </label>
         <label>
           Phone
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            maxLength={50}
+          />
         </label>
         <label>
           Start date
@@ -191,6 +197,7 @@ export default function MembersPage() {
           <input
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            maxLength={2000}
           />
         </label>
         <div className="actions span-2">
@@ -212,6 +219,7 @@ export default function MembersPage() {
           <input
             value={nameQuery}
             onChange={(e) => setNameQuery(e.target.value)}
+            maxLength={255}
           />
         </label>
         <label>
@@ -219,6 +227,7 @@ export default function MembersPage() {
           <input
             value={emailQuery}
             onChange={(e) => setEmailQuery(e.target.value)}
+            maxLength={255}
           />
         </label>
         <div className="actions span-2">

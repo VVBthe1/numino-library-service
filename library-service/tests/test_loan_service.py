@@ -95,6 +95,22 @@ class TestBorrowFailures:
             service.borrow(1, 1)
         loans.add.assert_not_called()
 
+    def test_due_date_in_past(self, service, books, members, loans):
+        books.get_by_id.return_value = _book()
+        members.get_by_id.return_value = _member()
+        loans.count_active_for_book.return_value = 0
+        with pytest.raises(ValueError, match="today or later"):
+            service.borrow(1, 1, due_date="2000-01-01")
+        loans.add.assert_not_called()
+
+    def test_due_date_bad_format(self, service, books, members, loans):
+        books.get_by_id.return_value = _book()
+        members.get_by_id.return_value = _member()
+        loans.count_active_for_book.return_value = 0
+        with pytest.raises(ValueError, match="YYYY-MM-DD"):
+            service.borrow(1, 1, due_date="02-08-2026")
+        loans.add.assert_not_called()
+
 
 class TestReturnFailures:
     def test_non_positive_id(self, service, loans):

@@ -187,6 +187,7 @@ export default function BooksPage() {
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            maxLength={255}
             required
           />
         </label>
@@ -195,14 +196,16 @@ export default function BooksPage() {
           <input
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
+            maxLength={255}
             required
           />
         </label>
         <label>
-          ISBN (10 or 13)
+          ISBN (10 or 13 characters)
           <input
             value={isbn}
             onChange={(e) => setIsbn(e.target.value)}
+            maxLength={13}
             required
           />
         </label>
@@ -233,6 +236,8 @@ export default function BooksPage() {
           Year
           <input
             type="number"
+            min="4"
+            max="4"
             value={publicationYear}
             onChange={(e) => setPublicationYear(e.target.value)}
           />
@@ -242,6 +247,7 @@ export default function BooksPage() {
           <input
             value={publisher}
             onChange={(e) => setPublisher(e.target.value)}
+            maxLength={255}
           />
         </label>
         <label className="span-2">
@@ -249,6 +255,7 @@ export default function BooksPage() {
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            maxLength={2000}
             rows={2}
           />
         </label>
@@ -271,6 +278,7 @@ export default function BooksPage() {
           <input
             value={titleQuery}
             onChange={(e) => setTitleQuery(e.target.value)}
+            maxLength={255}
           />
         </label>
         <label>
@@ -278,6 +286,7 @@ export default function BooksPage() {
           <input
             value={authorQuery}
             onChange={(e) => setAuthorQuery(e.target.value)}
+            maxLength={255}
           />
         </label>
         <label>
@@ -299,6 +308,7 @@ export default function BooksPage() {
           <input
             value={publisherFilter}
             onChange={(e) => setPublisherFilter(e.target.value)}
+            maxLength={255}
           />
         </label>
         <label className="inline-check span-2">

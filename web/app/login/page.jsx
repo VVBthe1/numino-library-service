@@ -46,6 +46,7 @@ export default function LoginPage() {
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            maxLength={64}
             required
           />
         </label>
@@ -55,6 +56,7 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            maxLength={128}
             required
           />
         </label>

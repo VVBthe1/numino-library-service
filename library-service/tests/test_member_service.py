@@ -41,6 +41,7 @@ class TestCreateFailures:
         [
             ({"name": "  "}, "name is required"),
             ({"email": ""}, "email is required"),
+            ({"email": "not-an-email"}, "email is invalid"),
             ({"membership_start_date": "  "}, "membership_start_date is required"),
             ({"membership_start_date": "01-01-2024"}, "YYYY-MM-DD"),
             (

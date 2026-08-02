@@ -60,6 +60,7 @@ export default function OutOfStockPage() {
           <input
             value={publisher}
             onChange={(e) => setPublisher(e.target.value)}
+            maxLength={255}
           />
         </label>
         <label>

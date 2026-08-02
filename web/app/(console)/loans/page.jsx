@@ -10,6 +10,19 @@ import {
 import { useAuth } from "@/auth";
 import { formatTime } from "@/labels";
 
+function formatLocalDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+
+function todayPlusDays(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return formatLocalDate(d);
+}
+
 export default function LoansPage() {
   const { token } = useAuth();
 
@@ -21,6 +34,7 @@ export default function LoansPage() {
 
   const [bookId, setBookId] = useState("");
   const [memberId, setMemberId] = useState("");
+  const [dueDate, setDueDate] = useState(() => todayPlusDays(7));
 
   const [filterBookId, setFilterBookId] = useState("");
   const [filterMemberId, setFilterMemberId] = useState("");
@@ -90,7 +104,9 @@ export default function LoansPage() {
       await getLoanClient(token).borrowBook({
         bookId: Number(bookId),
         memberId: Number(memberId),
+        dueDate: dueDate,
       });
+      setDueDate(todayPlusDays(7));
       await loadLoans();
       await loadDropdowns();
     } catch (err) {
@@ -155,6 +171,16 @@ export default function LoansPage() {
             ))}
           </select>
         </label>
+        <label>
+          Due date
+          <input
+            type="date"
+            value={dueDate}
+            min={todayPlusDays(0)}
+            onChange={(e) => setDueDate(e.target.value)}
+            required
+          />
+        </label>
         <div className="actions span-2">
           <button className="btn primary" type="submit" disabled={saving}>
             {saving ? "Working..." : "Borrow"}
@@ -165,20 +191,32 @@ export default function LoansPage() {
       <form className="panel form-grid" onSubmit={applyFilters}>
         <h2>Filters</h2>
         <label>
-          Book id
-          <input
-            type="number"
+          Book
+          <select
             value={filterBookId}
             onChange={(e) => setFilterBookId(e.target.value)}
-          />
+          >
+            <option value="">Any</option>
+            {books.map((b) => (
+              <option key={b.id} value={b.id}>
+                #{b.id} {b.title}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
-          Member id
-          <input
-            type="number"
+          Member
+          <select
             value={filterMemberId}
             onChange={(e) => setFilterMemberId(e.target.value)}
-          />
+          >
+            <option value="">Any</option>
+            {members.map((m) => (
+              <option key={m.id} value={m.id}>
+                #{m.id} {m.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="inline-check span-2">
           <input

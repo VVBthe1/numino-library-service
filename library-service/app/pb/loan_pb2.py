@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from app.pb import entities_pb2 as entities__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nloan.proto\x12\x17neighborhood.library.v1\x1a\x0e\x65ntities.proto\"\xb0\x01\n\x15LoanWithBookAndMember\x12+\n\x04loan\x18\x01 \x01(\x0b\x32\x1d.neighborhood.library.v1.Loan\x12\x32\n\x04\x62ook\x18\x02 \x01(\x0b\x32$.neighborhood.library.v1.BookMinimal\x12\x36\n\x06member\x18\x03 \x01(\x0b\x32&.neighborhood.library.v1.MemberMinimal\"7\n\x11\x42orrowBookRequest\x12\x0f\n\x07\x62ook_id\x18\x01 \x01(\x05\x12\x11\n\tmember_id\x18\x02 \x01(\x05\"A\n\x12\x42orrowBookResponse\x12+\n\x04loan\x18\x01 \x01(\x0b\x32\x1d.neighborhood.library.v1.Loan\"$\n\x11ReturnBookRequest\x12\x0f\n\x07loan_id\x18\x01 \x01(\x05\"A\n\x12ReturnBookResponse\x12+\n\x04loan\x18\x01 \x01(\x0b\x32\x1d.neighborhood.library.v1.Loan\"\x1c\n\x0eGetLoanRequest\x12\n\n\x02id\x18\x01 \x01(\x05\"\xaa\x01\n\x0fGetLoanResponse\x12+\n\x04loan\x18\x01 \x01(\x0b\x32\x1d.neighborhood.library.v1.Loan\x12\x32\n\x04\x62ook\x18\x02 \x01(\x0b\x32$.neighborhood.library.v1.BookMinimal\x12\x36\n\x06member\x18\x03 \x01(\x0b\x32&.neighborhood.library.v1.MemberMinimal\"\xab\x01\n\x10ListLoansRequest\x12\x11\n\tpage_size\x18\x01 \x01(\x05\x12\x12\n\npage_token\x18\x02 \x01(\t\x12\x14\n\x07\x62ook_id\x18\x03 \x01(\x05H\x00\x88\x01\x01\x12\x16\n\tmember_id\x18\x04 \x01(\x05H\x01\x88\x01\x01\x12\x18\n\x0b\x61\x63tive_only\x18\x05 \x01(\x08H\x02\x88\x01\x01\x42\n\n\x08_book_idB\x0c\n\n_member_idB\x0e\n\x0c_active_only\"k\n\x11ListLoansResponse\x12=\n\x05loans\x18\x01 \x03(\x0b\x32..neighborhood.library.v1.LoanWithBookAndMember\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t2\x9d\x03\n\x0bLoanService\x12\x65\n\nBorrowBook\x12*.neighborhood.library.v1.BorrowBookRequest\x1a+.neighborhood.library.v1.BorrowBookResponse\x12\x65\n\nReturnBook\x12*.neighborhood.library.v1.ReturnBookRequest\x1a+.neighborhood.library.v1.ReturnBookResponse\x12\\\n\x07GetLoan\x12\'.neighborhood.library.v1.GetLoanRequest\x1a(.neighborhood.library.v1.GetLoanResponse\x12\x62\n\tListLoans\x12).neighborhood.library.v1.ListLoansRequest\x1a*.neighborhood.library.v1.ListLoansResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nloan.proto\x12\x17neighborhood.library.v1\x1a\x0e\x65ntities.proto\"\xb0\x01\n\x15LoanWithBookAndMember\x12+\n\x04loan\x18\x01 \x01(\x0b\x32\x1d.neighborhood.library.v1.Loan\x12\x32\n\x04\x62ook\x18\x02 \x01(\x0b\x32$.neighborhood.library.v1.BookMinimal\x12\x36\n\x06member\x18\x03 \x01(\x0b\x32&.neighborhood.library.v1.MemberMinimal\"[\n\x11\x42orrowBookRequest\x12\x0f\n\x07\x62ook_id\x18\x01 \x01(\x05\x12\x11\n\tmember_id\x18\x02 \x01(\x05\x12\x15\n\x08\x64ue_date\x18\x03 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_due_date\"A\n\x12\x42orrowBookResponse\x12+\n\x04loan\x18\x01 \x01(\x0b\x32\x1d.neighborhood.library.v1.Loan\"$\n\x11ReturnBookRequest\x12\x0f\n\x07loan_id\x18\x01 \x01(\x05\"A\n\x12ReturnBookResponse\x12+\n\x04loan\x18\x01 \x01(\x0b\x32\x1d.neighborhood.library.v1.Loan\"\x1c\n\x0eGetLoanRequest\x12\n\n\x02id\x18\x01 \x01(\x05\"\xaa\x01\n\x0fGetLoanResponse\x12+\n\x04loan\x18\x01 \x01(\x0b\x32\x1d.neighborhood.library.v1.Loan\x12\x32\n\x04\x62ook\x18\x02 \x01(\x0b\x32$.neighborhood.library.v1.BookMinimal\x12\x36\n\x06member\x18\x03 \x01(\x0b\x32&.neighborhood.library.v1.MemberMinimal\"\xab\x01\n\x10ListLoansRequest\x12\x11\n\tpage_size\x18\x01 \x01(\x05\x12\x12\n\npage_token\x18\x02 \x01(\t\x12\x14\n\x07\x62ook_id\x18\x03 \x01(\x05H\x00\x88\x01\x01\x12\x16\n\tmember_id\x18\x04 \x01(\x05H\x01\x88\x01\x01\x12\x18\n\x0b\x61\x63tive_only\x18\x05 \x01(\x08H\x02\x88\x01\x01\x42\n\n\x08_book_idB\x0c\n\n_member_idB\x0e\n\x0c_active_only\"k\n\x11ListLoansResponse\x12=\n\x05loans\x18\x01 \x03(\x0b\x32..neighborhood.library.v1.LoanWithBookAndMember\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t2\x9d\x03\n\x0bLoanService\x12\x65\n\nBorrowBook\x12*.neighborhood.library.v1.BorrowBookRequest\x1a+.neighborhood.library.v1.BorrowBookResponse\x12\x65\n\nReturnBook\x12*.neighborhood.library.v1.ReturnBookRequest\x1a+.neighborhood.library.v1.ReturnBookResponse\x12\\\n\x07GetLoan\x12\'.neighborhood.library.v1.GetLoanRequest\x1a(.neighborhood.library.v1.GetLoanResponse\x12\x62\n\tListLoans\x12).neighborhood.library.v1.ListLoansRequest\x1a*.neighborhood.library.v1.ListLoansResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,21 +35,21 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LOANWITHBOOKANDMEMBER']._serialized_start=56
   _globals['_LOANWITHBOOKANDMEMBER']._serialized_end=232
   _globals['_BORROWBOOKREQUEST']._serialized_start=234
-  _globals['_BORROWBOOKREQUEST']._serialized_end=289
-  _globals['_BORROWBOOKRESPONSE']._serialized_start=291
-  _globals['_BORROWBOOKRESPONSE']._serialized_end=356
-  _globals['_RETURNBOOKREQUEST']._serialized_start=358
-  _globals['_RETURNBOOKREQUEST']._serialized_end=394
-  _globals['_RETURNBOOKRESPONSE']._serialized_start=396
-  _globals['_RETURNBOOKRESPONSE']._serialized_end=461
-  _globals['_GETLOANREQUEST']._serialized_start=463
-  _globals['_GETLOANREQUEST']._serialized_end=491
-  _globals['_GETLOANRESPONSE']._serialized_start=494
-  _globals['_GETLOANRESPONSE']._serialized_end=664
-  _globals['_LISTLOANSREQUEST']._serialized_start=667
-  _globals['_LISTLOANSREQUEST']._serialized_end=838
-  _globals['_LISTLOANSRESPONSE']._serialized_start=840
-  _globals['_LISTLOANSRESPONSE']._serialized_end=947
-  _globals['_LOANSERVICE']._serialized_start=950
-  _globals['_LOANSERVICE']._serialized_end=1363
+  _globals['_BORROWBOOKREQUEST']._serialized_end=325
+  _globals['_BORROWBOOKRESPONSE']._serialized_start=327
+  _globals['_BORROWBOOKRESPONSE']._serialized_end=392
+  _globals['_RETURNBOOKREQUEST']._serialized_start=394
+  _globals['_RETURNBOOKREQUEST']._serialized_end=430
+  _globals['_RETURNBOOKRESPONSE']._serialized_start=432
+  _globals['_RETURNBOOKRESPONSE']._serialized_end=497
+  _globals['_GETLOANREQUEST']._serialized_start=499
+  _globals['_GETLOANREQUEST']._serialized_end=527
+  _globals['_GETLOANRESPONSE']._serialized_start=530
+  _globals['_GETLOANRESPONSE']._serialized_end=700
+  _globals['_LISTLOANSREQUEST']._serialized_start=703
+  _globals['_LISTLOANSREQUEST']._serialized_end=874
+  _globals['_LISTLOANSRESPONSE']._serialized_start=876
+  _globals['_LISTLOANSRESPONSE']._serialized_end=983
+  _globals['_LOANSERVICE']._serialized_start=986
+  _globals['_LOANSERVICE']._serialized_end=1399
 # @@protoc_insertion_point(module_scope)

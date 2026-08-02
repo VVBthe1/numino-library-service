@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 from app.models.loan import Loan
 from app.repositories.book import BookRepository
@@ -21,7 +21,12 @@ class LoanService:
         self._books = books
         self._members = members
 
-    def borrow(self, book_id: int, member_id: int) -> Loan:
+    def borrow(
+        self,
+        book_id: int,
+        member_id: int,
+        due_date: str | None = None,
+    ) -> Loan:
         if book_id <= 0:
             raise ValueError("book_id must be a positive integer")
         if member_id <= 0:
@@ -39,11 +44,26 @@ class LoanService:
             raise ValueError("book is out of stock")
 
         now = datetime.now(timezone.utc)
+        if due_date:
+            raw = due_date.strip()
+            if not raw:
+                raise ValueError("due_date is required")
+            try:
+                due_day = date.fromisoformat(raw)
+            except ValueError as exc:
+                raise ValueError("due_date must be YYYY-MM-DD") from exc
+            if due_day < today:
+                raise ValueError("due_date must be today or later")
+            # start of due day so "today" can already be overdue
+            due_at = datetime.combine(due_day, time(0, 0, 0), tzinfo=timezone.utc)
+        else:
+            due_at = now + timedelta(days=DEFAULT_LOAN_DAYS)
+
         loan = Loan(
             book_id=book.id,
             member_id=member.id,
             borrowed_at=now,
-            due_at=now + timedelta(days=DEFAULT_LOAN_DAYS),
+            due_at=due_at,
         )
         return self._loans.add(loan)
 

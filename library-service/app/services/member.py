@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import re
 from datetime import date
 
 from app.models.member import Member
 from app.repositories.loan import LoanRepository
 from app.repositories.member import MemberRepository
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 def _parse_date(value: str, *, field: str) -> date:
@@ -15,6 +18,17 @@ def _parse_date(value: str, *, field: str) -> date:
         return date.fromisoformat(value)
     except ValueError as exc:
         raise ValueError(f"{field} must be YYYY-MM-DD") from exc
+
+
+def _normalize_email(email: str) -> str:
+    email = email.strip().lower()
+    if not email:
+        raise ValueError("email is required")
+    if len(email) > 255:
+        raise ValueError("email must be at most 255 characters")
+    if not _EMAIL_RE.fullmatch(email):
+        raise ValueError("email is invalid")
+    return email
 
 
 class MemberService:
@@ -33,12 +47,14 @@ class MemberService:
         membership_end_date: str | None = None,
     ) -> Member:
         name = name.strip()
-        email = email.strip().lower()
+        email = _normalize_email(email)
 
         if not name:
             raise ValueError("name is required")
-        if not email:
-            raise ValueError("email is required")
+        if len(name) > 255:
+            raise ValueError("name must be at most 255 characters")
+        if phone and len(phone.strip()) > 50:
+            raise ValueError("phone must be at most 50 characters")
         if self._members.get_by_email(email) is not None:
             raise ValueError("email already exists")
 
@@ -98,11 +114,13 @@ class MemberService:
             raise ValueError("id must be a positive integer")
 
         name = name.strip()
-        email = email.strip().lower()
+        email = _normalize_email(email)
         if not name:
             raise ValueError("name is required")
-        if not email:
-            raise ValueError("email is required")
+        if len(name) > 255:
+            raise ValueError("name must be at most 255 characters")
+        if phone and len(phone.strip()) > 50:
+            raise ValueError("phone must be at most 50 characters")
 
         member = self._members.get_by_id(member_id)
         existing = self._members.get_by_email(email)

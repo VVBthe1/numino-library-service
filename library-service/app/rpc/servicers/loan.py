@@ -27,7 +27,11 @@ class LoanServicer(loan_pb2_grpc.LoanServiceServicer):
         try:
             with session_scope() as db:
                 service = _loan_service(db)
-                loan = service.borrow(request.book_id, request.member_id)
+                loan = service.borrow(
+                    request.book_id,
+                    request.member_id,
+                    due_date=request.due_date if request.HasField("due_date") else None,
+                )
                 return loan_pb2.BorrowBookResponse(loan=loan_to_proto(loan))
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)

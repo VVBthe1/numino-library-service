@@ -35,6 +35,12 @@ export interface BorrowBookRequest {
      * @generated from protobuf field: int32 member_id = 2
      */
     memberId: number;
+    /**
+     * YYYY-MM-DD. If omitted, defaults to today + 7 days.
+     *
+     * @generated from protobuf field: optional string due_date = 3
+     */
+    dueDate?: string;
 }
 /**
  * @generated from protobuf message neighborhood.library.v1.BorrowBookResponse
@@ -146,7 +152,8 @@ class BorrowBookRequest$Type extends MessageType<BorrowBookRequest> {
     constructor() {
         super("neighborhood.library.v1.BorrowBookRequest", [
             { no: 1, name: "book_id", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
-            { no: 2, name: "member_id", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
+            { no: 2, name: "member_id", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 3, name: "due_date", kind: "scalar", opt: true, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
 }
