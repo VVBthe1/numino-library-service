@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Enum as SAEnum
 
 from app.database import Base
+from app.models.soft_delete import SoftDeleteMixin
 
 if TYPE_CHECKING:
     from app.models.loan import Loan
@@ -28,7 +29,7 @@ class Genre(str, enum.Enum):
     OTHER = "other"
 
 
-class Book(Base):
+class Book(SoftDeleteMixin, Base):
     __tablename__ = "books"
     __table_args__ = (
         CheckConstraint("total_quantity >= 0", name="ck_books_total_quantity_non_negative"),
@@ -37,7 +38,7 @@ class Book(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     author: Mapped[str] = mapped_column(String(255), nullable=False)
-    isbn: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
+    isbn: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     publication_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     publisher: Mapped[str | None] = mapped_column(String(255), nullable=True)
     genre: Mapped[Genre] = mapped_column(

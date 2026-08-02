@@ -24,6 +24,9 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/neighborhood_library
       GRPC_HOST: 0.0.0.0
       GRPC_PORT: "50051"
+      JWT_SECRET: neighborhood-library-dev-secret-key
+      AUTH_USERNAME: admin
+      AUTH_PASSWORD: admin
     ports:
       - "8000:8000"
       - "50051:50051"
@@ -31,12 +34,22 @@ services:
       db:
         condition: service_healthy
 
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    ports:
+      - "8081:8080"
+    depends_on:
+      - library-service
+
   web:
     build: ./web
     ports:
       - "8080:80"
     depends_on:
       - library-service
+      - envoy
 
 volumes:
   postgres_data:

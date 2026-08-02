@@ -1,12 +1,19 @@
 import grpc
 from google.protobuf import empty_pb2
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import NoResultFound
 
 from app.database import session_scope
 from app.pb import book_pb2, book_pb2_grpc
 from app.repositories.book import BookRepository
 from app.repositories.loan import LoanRepository
-from app.rpc.mappers.book import book_to_proto, genre_from_proto
+from app.rpc.mappers.book import (
+    book_minimal_to_proto,
+    book_to_proto,
+    genre_from_proto,
+    loan_to_proto,
+    member_minimal_to_proto,
+)
 from app.services.book import BookService
 
 
@@ -34,7 +41,9 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                     else None,
                 )
                 return book_pb2.CreateBookResponse(
-                    book=book_to_proto(book, available_quantity=book.total_quantity)
+                    book=book_to_proto(
+                        book, available_quantity=service.available_quantity(book)
+                    )
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
@@ -47,7 +56,9 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                 service = _book_service(db)
                 book = service.get(request.id)
                 return book_pb2.GetBookResponse(
-                    book=book_to_proto(book, available_quantity=book.total_quantity)
+                    book=book_to_proto(
+                        book, available_quantity=service.available_quantity(book)
+                    )
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
@@ -80,21 +91,22 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                     if request.HasField("author_query")
                     else None,
                     genre=genre,
+                    publisher=request.publisher
+                    if request.HasField("publisher")
+                    else None,
                     available_only=available_only,
                     limit=request.page_size or 50,
                 )
                 return book_pb2.ListBooksResponse(
                     books=[
-                        book_to_proto(book, available_quantity=book.total_quantity)
+                        book_to_proto(
+                            book, available_quantity=service.available_quantity(book)
+                        )
                         for book in books
                     ],
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details(str(exc))
-            return book_pb2.ListBooksResponse()
-        except NotImplementedError as exc:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             context.set_details(str(exc))
             return book_pb2.ListBooksResponse()
 
@@ -118,7 +130,9 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                     else None,
                 )
                 return book_pb2.UpdateBookResponse(
-                    book=book_to_proto(book, available_quantity=book.total_quantity)
+                    book=book_to_proto(
+                        book, available_quantity=service.available_quantity(book)
+                    )
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
@@ -127,10 +141,6 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
         except NoResultFound:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(f"book {request.id} not found")
-            return book_pb2.UpdateBookResponse()
-        except NotImplementedError as exc:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-            context.set_details(str(exc))
             return book_pb2.UpdateBookResponse()
 
     def DeleteBook(self, request, context):
@@ -147,9 +157,9 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(f"book {request.id} not found")
             return empty_pb2.Empty()
-        except NotImplementedError as exc:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-            context.set_details(str(exc))
+        except IntegrityError:
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details("cannot delete book referenced by loans")
             return empty_pb2.Empty()
 
     def GetOverdueBooks(self, request, context):
@@ -161,20 +171,25 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                     if request.HasField("genre")
                     else None
                 )
-                service.list_overdue(
+                loans = service.list_overdue(
                     publisher=request.publisher
                     if request.HasField("publisher")
                     else None,
                     genre=genre,
                     limit=request.page_size or 50,
                 )
-                return book_pb2.OverdueBooksResponse()
+                return book_pb2.OverdueBooksResponse(
+                    books=[
+                        book_pb2.OverdueBook(
+                            book=book_minimal_to_proto(loan.book),
+                            loan=loan_to_proto(loan),
+                            member=member_minimal_to_proto(loan.member),
+                        )
+                        for loan in loans
+                    ],
+                )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details(str(exc))
-            return book_pb2.OverdueBooksResponse()
-        except NotImplementedError as exc:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             context.set_details(str(exc))
             return book_pb2.OverdueBooksResponse()
 
@@ -201,9 +216,5 @@ class BookServicer(book_pb2_grpc.BookServiceServicer):
                 )
         except ValueError as exc:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details(str(exc))
-            return book_pb2.OutOfStockBooksResponse()
-        except NotImplementedError as exc:
-            context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             context.set_details(str(exc))
             return book_pb2.OutOfStockBooksResponse()

@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://postgres:postgres@localhost:5432/neighborhood_library"
     grpc_host: str = "0.0.0.0"
     grpc_port: int = 50051
+    jwt_secret: str = "neighborhood-library-dev-secret-key"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60
+    auth_username: str = "admin"
+    auth_password: str = "admin"
 
 
 @lru_cache

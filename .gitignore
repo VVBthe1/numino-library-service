@@ -87,6 +87,8 @@ alembic/versions/__pycache__/
 # Node / frontend
 node_modules/
 dist/
+out/
+.next/
 *.local
 
 # Docker

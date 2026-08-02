@@ -3,16 +3,22 @@ from concurrent import futures
 import grpc
 
 from app.config import get_settings
+from app.pb import auth_pb2_grpc, book_pb2_grpc, loan_pb2_grpc, member_pb2_grpc
+from app.rpc.interceptors.auth import AuthInterceptor
+from app.rpc.servicers.auth import AuthServicer
 from app.rpc.servicers.book import BookServicer
 from app.rpc.servicers.loan import LoanServicer
 from app.rpc.servicers.member import MemberServicer
-from app.pb import book_pb2_grpc, loan_pb2_grpc, member_pb2_grpc
 
 
 def create_server() -> grpc.Server:
     settings = get_settings()
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=10),
+        interceptors=[AuthInterceptor()],
+    )
 
+    auth_pb2_grpc.add_AuthServiceServicer_to_server(AuthServicer(), server)
     book_pb2_grpc.add_BookServiceServicer_to_server(BookServicer(), server)
     member_pb2_grpc.add_MemberServiceServicer_to_server(MemberServicer(), server)
     loan_pb2_grpc.add_LoanServiceServicer_to_server(LoanServicer(), server)
