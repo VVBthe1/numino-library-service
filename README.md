@@ -17,12 +17,14 @@ Browser (web :8080)
                           → Postgres (:5432)
 ```
 
-| Layer | Path |
-|-------|------|
-| Proto contracts | `proto/` |
-| Backend | `library-service/` (models → repositories → services → gRPC servicers) |
-| gRPC-Web proxy | `envoy/` |
-| Staff UI | `web/` |
+
+| Layer           | Path                                                                   |
+| --------------- | ---------------------------------------------------------------------- |
+| Proto contracts | `proto/`                                                               |
+| Backend         | `library-service/` (models → repositories → services → gRPC servicers) |
+| gRPC-Web proxy  | `envoy/`                                                               |
+| Staff UI        | `web/`                                                                 |
+
 
 ## Requirements
 
@@ -36,15 +38,17 @@ From the repo root:
 docker compose up --build
 ```
 
-| Service | URL / port |
-|---------|------------|
-| Staff UI | http://localhost:8080 |
-| gRPC-Web (Envoy) | http://localhost:8081 |
-| HTTP health | http://localhost:8000/health |
-| gRPC | localhost:50051 |
-| Postgres | localhost:5432 |
 
-Sign in at http://localhost:8080 with `admin` / `admin`.
+| Service          | URL / port                                                   |
+| ---------------- | ------------------------------------------------------------ |
+| Staff UI         | [http://localhost:8080](http://localhost:8080)               |
+| gRPC-Web (Envoy) | [http://localhost:8081](http://localhost:8081)               |
+| HTTP health      | [http://localhost:8000/health](http://localhost:8000/health) |
+| gRPC             | localhost:50051                                              |
+| Postgres         | localhost:5432                                               |
+
+
+Sign in at [http://localhost:8080](http://localhost:8080) with `admin` / `admin`.
 
 On first boot the API runs migrations (`alembic upgrade head`) and an idempotent seed (`scripts/seed.py`): a few books/members, one **overdue** loan, and an **out of stock** title so those screens aren’t empty.
 
@@ -64,7 +68,7 @@ Stop with `Ctrl+C`, or `docker compose down`.
 
 ### UI
 
-1. Open http://localhost:8080 and sign in (`admin` / `admin`).
+1. Open [http://localhost:8080](http://localhost:8080) and sign in (`admin` / `admin`).
 2. Seeded data should already show books, members, loans; open **Overdue** and **Out of stock**.
 3. Create more records or borrow / return on **Loans**.
 4. Use filters on each list.
@@ -72,7 +76,7 @@ Stop with `Ctrl+C`, or `docker compose down`.
 
 ### Unit tests
 
-With the stack up (`docker compose up --build`), run pytest inside the API container:
+Run this from the **host** (where Docker is installed), with the stack up (`docker compose up --build`).
 
 ```bash
 docker compose exec library-service sh -c "pip install -q -r requirements-dev.txt && python -m pytest -v"
@@ -80,7 +84,7 @@ docker compose exec library-service sh -c "pip install -q -r requirements-dev.tx
 
 ### gRPC with grpcurl (optional)
 
-Stack must be up (`docker compose up --build`). Run from the **repo root**. grpcurl JSON uses **camelCase** field names.
+Run these on your **local machine** (WSL/host), not inside the `library-service` container. Compose exposes gRPC on `localhost:50051`. Stack must be up (`docker compose up --build`). Commands assume the **repo root**. grpcurl JSON uses **camelCase** field names.
 
 Install [grpcurl](https://github.com/fullstorydev/grpcurl) and [jq](https://jqlang.github.io/jq/) if needed:
 
@@ -98,7 +102,7 @@ go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
 curl -sL "https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_x86_64.tar.gz" | sudo tar -xz -C /usr/local/bin grpcurl
 ```
 
-Other platforms: https://github.com/fullstorydev/grpcurl/releases
+Other platforms: [https://github.com/fullstorydev/grpcurl/releases](https://github.com/fullstorydev/grpcurl/releases)
 
 ```bash
 # Shared setup
