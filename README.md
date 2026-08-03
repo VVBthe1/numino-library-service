@@ -2,6 +2,8 @@
 
 Staff console for a small neighborhood library: manage books, members, and loans.
 
+For request flow, design choices, assumptions, and known issues, see the [Implementation doc](IMPLEMENTATION.md).
+
 ## What’s built
 
 - **gRPC API** (Python) for auth, books, members, and loans, backed by PostgreSQL
@@ -24,20 +26,9 @@ Browser (web :8080)
 
 ## Requirements
 
-**Recommended (Docker):**
-
 - Docker and Docker Compose
 
-**Optional (run pieces without Docker):**
-
-- Python 3.12+
-- Node.js 22+ (frontend only)
-- PostgreSQL 16
-- [grpcurl](https://github.com/fullstorydev/grpcurl) (API smoke tests)
-
 ## Run locally
-
-### With Docker (easiest)
 
 From the repo root:
 
@@ -55,37 +46,19 @@ docker compose up --build
 
 Sign in at http://localhost:8080 with `admin` / `admin`.
 
-On first boot the API runs an idempotent seed (`scripts/seed.py`): a few books/members, one **overdue** loan, and an **out of stock** title so those screens aren’t empty.
+On first boot the API runs migrations (`alembic upgrade head`) and an idempotent seed (`scripts/seed.py`): a few books/members, one **overdue** loan, and an **out of stock** title so those screens aren’t empty.
+
+**Protobuf:** sources live in `proto/`. Generated Python stubs are checked in under `library-service/app/pb/` (and the web clients under `web/src/gen/`). To regenerate after editing `.proto` files:
+
+```bash
+docker compose exec library-service python scripts/generate_protos.py
+```
+
+(Frontend stubs are produced separately with the protobuf-ts tooling in `web/` when you change the API contract.)
+
+**Main env vars** (also set in `docker-compose.yml` for the API service): `DATABASE_URL`, `GRPC_HOST`, `GRPC_PORT`, `JWT_SECRET`, `AUTH_USERNAME`, `AUTH_PASSWORD`.
 
 Stop with `Ctrl+C`, or `docker compose down`.
-
-### Frontend only (against running Compose)
-
-With Envoy already up on 8081:
-
-```bash
-cd web
-npm install
-NEXT_PUBLIC_GRPC_BASE_URL=http://localhost:8081 npm run dev
-# http://localhost:5173
-```
-
-### Backend only (no Docker for the API)
-
-Needs a reachable Postgres (e.g. Compose `db` service, or local Postgres).
-
-```bash
-cd library-service
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-
-python scripts/generate_protos.py   # after editing proto/
-alembic upgrade head
-python scripts/seed.py          # optional; skipped if already seeded
-python -m app.rpc.server            # :50051
-```
 
 ## How to test
 
@@ -97,37 +70,64 @@ python -m app.rpc.server            # :50051
 4. Use filters on each list.
 5. Delete a book/member that only has returned loans — it should leave the catalog but remain on loan history.
 
-### Backend unit tests
+### Unit tests
+
+With the stack up (`docker compose up --build`), run pytest inside the API container:
 
 ```bash
-cd library-service
-source .venv/bin/activate   # if using a venv
-pip install -r requirements-dev.txt
-python -m pytest -q
+docker compose exec library-service sh -c "pip install -q -r requirements-dev.txt && python -m pytest -v"
 ```
 
-### gRPC with grpcurl
+### gRPC with grpcurl (optional)
 
-From the repo root, with the API on `:50051`:
+Stack must be up (`docker compose up --build`). Run from the **repo root**. grpcurl JSON uses **camelCase** field names.
+
+Install [grpcurl](https://github.com/fullstorydev/grpcurl) and [jq](https://jqlang.github.io/jq/) if needed:
 
 ```bash
-PROTO=(-import-path proto -proto auth.proto -proto book.proto -proto member.proto -proto loan.proto -proto entities.proto)
+# Debian / Ubuntu / WSL — jq
+sudo apt-get update && sudo apt-get install -y jq
 
-# Login (grpcurl JSON uses camelCase: accessToken)
-export TOKEN=$(grpcurl -plaintext "${PROTO[@]}" \
-  -d '{"username":"admin","password":"admin"}' \
-  localhost:50051 neighborhood.library.v1.AuthService/Login \
-  | jq -r .accessToken)
+# macOS (Homebrew) — both
+brew install grpcurl jq
 
-AUTH=(-H "authorization: Bearer ${TOKEN}")
+# grpcurl via Go (ensure $(go env GOPATH)/bin is on PATH)
+go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
 
-grpcurl -plaintext "${PROTO[@]}" "${AUTH[@]}" \
-  -d '{"page_size":10}' \
-  localhost:50051 neighborhood.library.v1.BookService/ListBooks
+# or grpcurl Linux amd64 binary (no Go)
+curl -sL "https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_x86_64.tar.gz" | sudo tar -xz -C /usr/local/bin grpcurl
 ```
 
-Other RPCs follow the same pattern (`CreateBook`, `CreateMember`, `BorrowBook`, `ReturnBook`, …). Without a Bearer token, domain calls return `UNAUTHENTICATED`.
+Other platforms: https://github.com/fullstorydev/grpcurl/releases
 
 ```bash
-grpcurl -plaintext "${PROTO[@]}" list localhost:50051
+# Shared setup
+PROTO=(-import-path proto -proto auth.proto -proto book.proto -proto member.proto -proto loan.proto -proto entities.proto); HOST=localhost:50051
+
+# 1. Login (domain calls without this return UNAUTHENTICATED)
+export TOKEN=$(grpcurl -plaintext "${PROTO[@]}" -d '{"username":"admin","password":"admin"}' "$HOST" neighborhood.library.v1.AuthService/Login | jq -r .accessToken)
+
+# 2. Create a book
+BOOK=$(grpcurl -plaintext "${PROTO[@]}" -H "authorization: Bearer ${TOKEN}" -d '{"title":"The Dispossessed","author":"Ursula K. Le Guin","isbn":"9780060512750","genre":"GENRE_SCIENCE_FICTION","totalQuantity":2}' "$HOST" neighborhood.library.v1.BookService/CreateBook); echo "$BOOK" | jq .; BOOK_ID=$(echo "$BOOK" | jq -r .book.id)
+
+# 3. Create a member
+MEMBER=$(grpcurl -plaintext "${PROTO[@]}" -H "authorization: Bearer ${TOKEN}" -d '{"name":"Grace Hopper","email":"grace.hopper@example.com","membershipStartDate":"2024-01-01"}' "$HOST" neighborhood.library.v1.MemberService/CreateMember); echo "$MEMBER" | jq .; MEMBER_ID=$(echo "$MEMBER" | jq -r .member.id)
+
+# 4. Borrow the book
+LOAN=$(grpcurl -plaintext "${PROTO[@]}" -H "authorization: Bearer ${TOKEN}" -d "{\"bookId\":${BOOK_ID},\"memberId\":${MEMBER_ID}}" "$HOST" neighborhood.library.v1.LoanService/BorrowBook); echo "$LOAN" | jq .; LOAN_ID=$(echo "$LOAN" | jq -r .loan.id)
+
+# 5. List that member’s active loans
+grpcurl -plaintext "${PROTO[@]}" -H "authorization: Bearer ${TOKEN}" -d "{\"pageSize\":10,\"memberId\":${MEMBER_ID},\"activeOnly\":true}" "$HOST" neighborhood.library.v1.LoanService/ListLoans | jq .
+
+# 6. List books / members
+grpcurl -plaintext "${PROTO[@]}" -H "authorization: Bearer ${TOKEN}" -d '{"pageSize":10}' "$HOST" neighborhood.library.v1.BookService/ListBooks | jq .
+grpcurl -plaintext "${PROTO[@]}" -H "authorization: Bearer ${TOKEN}" -d '{"pageSize":10}' "$HOST" neighborhood.library.v1.MemberService/ListMembers | jq .
+
+# 7. Return the book
+grpcurl -plaintext "${PROTO[@]}" -H "authorization: Bearer ${TOKEN}" -d "{\"loanId\":${LOAN_ID}}" "$HOST" neighborhood.library.v1.LoanService/ReturnBook | jq .
+
+# Discover services
+grpcurl -plaintext "${PROTO[@]}" "$HOST" list
 ```
+
+Other useful calls: `GetOverdueBooks`, `GetOutOfStockBooks`, `UpdateBook`, `DeleteBook`.
